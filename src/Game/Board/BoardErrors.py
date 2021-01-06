@@ -26,13 +26,5 @@ class InvalidCastleError(Exception):
 	def __init__(self,color):
 		self.color = color
 
-class InvalidInputError(Exception):
-	def __init__(self,inp):
-		self.inp = inp
-
-class InvalidCastleInputError(Exception):
-	def __init__(self,inp):
-		self.inp = inp
-
 def convert_coordinate_to_position(position):
 	return chr(position.file+97) + str(position.rank+1)

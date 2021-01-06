@@ -1,7 +1,7 @@
 from .Square import Square
 from .Piece import Piece
 from .Position import Position
-from .Errors import InvalidPositionError, NoPieceError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
+from .BoardErrors import InvalidPositionError, NoPieceError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
 import copy
 from numpy import ndarray
 

@@ -1,8 +1,9 @@
 from .Board.Board import Board
-from .Board.Errors import InvalidInputError, InvalidPositionError, NoPieceError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleInputError, InvalidCastleError
+from .Board.BoardErrors import InvalidPositionError, NoPieceError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
 from .Board.Position import Position
+from .InputErrors import InvalidInputError, InvalidCastleInputError
 import re
-import os
+from os import system
 
 class Game:
 	def __init__(self):
@@ -54,7 +55,7 @@ class Game:
 			except NoPieceError as e:
 				print("Invalid move. No " + e.color + " piece at square " + e.position + ".\n")
 			except InvalidMoveError as e:
-				print("Invalid move. Cannot move " + e.piece_type + " from " + e.start_position + " to " + " e.from_position.\n")
+				print("Invalid move. Cannot move " + e.piece_type + " from " + e.start_position + " to " + e.end_position + ".\n")
 			except InvalidPieceCheckError as e:
 				print("Invalid move. Cannot move " + e.piece_type + " when in check.\n")
 			except InvalidCastleInputError as e:
@@ -179,4 +180,4 @@ class Game:
 		self.board.reset()
 
 	def clear(self):
-		os.system('clear')
+		system('clear')
