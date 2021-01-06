@@ -226,25 +226,25 @@ class Board:
 		if (end.rank-start.rank)*(end.file-start.file) == 0 and end != start:
 			rank_shift = end.rank-start.rank
 			file_shift = end.file-start.file
-			rank_direction = rank_shift/abs(rank_shift)
-			file_direction = file_shift/abs(file_shift)
 
 			if rank_shift != 0:
-				for rank_shift_abs in range(1,abs(rank_shift)):
-					temp_position.rank = start.rank+rank_direction*rank_shift_abs
+				rank_direction = rank_shift/abs(rank_shift)
+				for rank_shift_abs in range(abs(rank_shift)):
+					temp_position.rank = int(start.rank+rank_direction*(rank_shift_abs+1))
 					temp_position.file = start.file
 					if self.is_valid_position(temp_position):
-						if self.board[temp_position.rank,temp_position.file].peice.color is piece.color:
+						if self.board[temp_position.rank,temp_position.file].piece.color is piece.color:
 							return False
 						elif end == temp_position:
 							return True
 				return False
 			else:
-				for rank_shift_abs in range(1,abs(rank_shift)):
+				file_direction = file_shift/abs(file_shift)
+				for rank_shift_abs in range(abs(rank_shift)):
 					temp_position.rank = start.rank
-					temp_position.file = start.file+file_direction*file_shift_abs
+					temp_position.file = int(start.file+file_direction*(file_shift_abs+1))
 					if self.is_valid_position(temp_position):
-						if self.board[temp_position.rank,temp_position.file].peice.color is piece.color:
+						if self.board[temp_position.rank,temp_position.file].piece.color is piece.color:
 							return False
 						elif end == temp_position:
 							return True
@@ -266,20 +266,29 @@ class Board:
 	def is_valid_move_bishop(self,start,end,piece):
 		temp_position = Position(0,0)
 
-		if abs(end.rank-start.rank) == abs(end.file-start.file) and end != start:
-			rank_shift = end.rank-start.rank
-			file_shift = end.file-start.file
+		taking_piece_color = "black"
+		if piece.color is "black":
+			taking_piece_color = "white"
+
+		rank_shift = end.rank-start.rank
+		file_shift = end.file-start.file
+
+		if abs(rank_shift) == abs(file_shift) and end != start:
 			rank_direction = rank_shift/abs(rank_shift)
 			file_direction = file_shift/abs(file_shift)
 
-			for shift_abs in range(1,abs(rank_shift)):
-				temp_position.rank = start.rank+rank_direction*shift_abs
-				temp_position.file = start.file+file_direction*shift_abs
+			for shift_abs in range(abs(rank_shift)):
+				temp_position.rank = int(start.rank+rank_direction*(shift_abs+1))
+				temp_position.file = int(start.file+file_direction*(shift_abs+1))
 				if self.is_valid_position(temp_position):
-					if self.board[temp_position.rank,temp_position.file].peice.color is piece.color:
-						return False
-					elif end == temp_position:
-						return True
+					if end == temp_position:
+						if self.board[temp_position.rank,temp_position.file].piece.color is piece.color:
+							return False
+						else:
+							return True
+					else:
+						if self.board[temp_position.rank,temp_position.file].piece.color is taking_piece_color:
+							return False
 			return False
 		else:
 			return False 
