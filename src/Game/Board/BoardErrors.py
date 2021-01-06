@@ -9,6 +9,10 @@ class NoPieceError(Exception):
 		self.position = convert_coordinate_to_position(position)
 		self.color = color
 
+class SameSquareError(Exception):
+	def __init__(self,position):
+		self.position = position
+
 class InvalidPositionError(Exception):
 	def __init__(self,position):
 		self.position = convert_coordinate_to_position(position)

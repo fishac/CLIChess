@@ -1,13 +1,15 @@
 from .Board.Board import Board
-from .Board.BoardErrors import InvalidPositionError, NoPieceError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
+from .Board.BoardErrors import InvalidPositionError, NoPieceError, SameSquareError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
 from .Board.Position import Position
 from .InputErrors import InvalidInputError, InvalidCastleInputError
 import re
 from os import system
+from sys import stdout
 
 class Game:
 	def __init__(self):
 		self.board = Board()
+		stdout.reconfigure(encoding="utf-8")
 
 	def play(self):
 		game_end = False
@@ -54,6 +56,8 @@ class Game:
 				print("Invalid position: " + e.position + ". Files range from A to H, ranks range from 1 to 8.\n")
 			except NoPieceError as e:
 				print("Invalid move. No " + e.color + " piece at square " + e.position + ".\n")
+			except SameSquareError as e:
+				print("Invalid move. Cannot move a piece to the same square it is on.\n")
 			except InvalidMoveError as e:
 				print("Invalid move. Cannot move " + e.piece_type + " from " + e.start_position + " to " + e.end_position + ".\n")
 			except InvalidPieceCheckError as e:
@@ -156,6 +160,59 @@ class Game:
 
 		print()
 
+	def display_board2(self):
+		self.clear()
+
+		print()
+
+		string_to_print = "  "
+		for i in range(33):
+			string_to_print += "_"
+		print(string_to_print)
+
+		for rank in range(8):
+			real_rank = 7-rank
+			file = 0
+
+			string_to_print = "  "
+			for i in range(33):
+				if i % 4 == 0:
+					string_to_print += "|"
+				else:
+					string_to_print += " "
+			print(string_to_print)
+
+			string_to_print = str(real_rank+1) + " "
+			for i in range(33):
+				if i % 4 == 0:
+					string_to_print += "|"
+				elif i % 4 == 2:
+					string_to_print += self.format_piece2(real_rank,file)
+					file += 1
+				else:
+					string_to_print += " "
+			print(string_to_print)
+
+			string_to_print = "  "
+			for i in range(33):
+				if i % 4 == 0:
+					string_to_print += "|"
+				else:
+					string_to_print += "_"
+			print(string_to_print)
+
+		string_to_print = "  "
+		file = 0
+		for i in range(33):
+			if i % 4 == 2:
+				string_to_print += chr(file + 97)
+				file += 1
+			else:
+				string_to_print += " "
+		print(string_to_print)
+
+		print()
+
 	def format_piece(self,rank,file):
 		piece_type = self.board.board[rank,file].piece.type
 		piece_color = self.board.board[rank,file].piece.color
@@ -175,6 +232,40 @@ class Game:
 			return formatted_color + "Q"
 		elif piece_type is "king":
 			return formatted_color + "K"
+
+	def format_piece2(self,rank,file):
+		piece_type = self.board.board[rank,file].piece.type
+		piece_color = self.board.board[rank,file].piece.color
+		formatted_color = piece_color[0]
+
+		if piece_type is "nopiece":
+			return " "
+		elif piece_color is "black":
+			if piece_type is "pawn":
+				return "\u2659"
+			elif piece_type is "rook":
+				return "\u2656"
+			elif piece_type is "knight":
+				return "\u2658"
+			elif piece_type is "bishop": 
+				return "\u2657"
+			elif piece_type is "queen": 
+				return "\u2655"
+			elif piece_type is "king":
+				return "\u2654"
+		elif piece_color is "white":
+			if piece_type is "pawn":
+				return "\u265f"
+			elif piece_type is "rook":
+				return "\u265c"
+			elif piece_type is "knight":
+				return "\u265e"
+			elif piece_type is "bishop": 
+				return "\u265d"
+			elif piece_type is "queen": 
+				return "\u265b"
+			elif piece_type is "king":
+				return "\u265a"
 
 	def reset(self):
 		self.board.reset()

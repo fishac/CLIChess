@@ -7,8 +7,8 @@ class Square:
 			"black": False
 		}
 		self.is_attacked_by = {
-			"white": False,
-			"black": False
+			"white": [],
+			"black": []
 		}
 
 	def __str__(self):

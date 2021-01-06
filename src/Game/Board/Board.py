@@ -31,53 +31,56 @@ class Board:
 			"black": (7,4)
 		}
 		for file in range(8):
-			self.board[1,file] = Square(Position(1,file),Piece("pawn","white"))
-			self.board[6,file] = Square(Position(6,file),Piece("pawn","black"))
+			self.board[1,file] = Square(Position(1,file),Piece("pawn","white","p" + str(file) + "1"))
+			self.board[6,file] = Square(Position(6,file),Piece("pawn","black","p" + str(file) + "6"))
 
-		self.board[0,0] = Square(Position(0,0),Piece("rook","white"))
-		self.board[0,7] = Square(Position(0,7),Piece("rook","white"))
-		self.board[7,0] = Square(Position(7,0),Piece("rook","black"))
-		self.board[7,7] = Square(Position(7,7),Piece("rook","black"))
+		self.board[0,0] = Square(Position(0,0),Piece("rook","white","Ra1"))
+		self.board[0,7] = Square(Position(0,7),Piece("rook","white","Rh1"))
+		self.board[7,0] = Square(Position(7,0),Piece("rook","black","Ra8"))
+		self.board[7,7] = Square(Position(7,7),Piece("rook","black","Rh8"))
 
-		self.board[0,1] = Square(Position(0,1),Piece("knight","white"))
-		self.board[0,6] = Square(Position(0,6),Piece("knight","white"))
-		self.board[7,1] = Square(Position(7,1),Piece("knight","black"))
-		self.board[7,6] = Square(Position(7,6),Piece("knight","black"))
+		self.board[0,1] = Square(Position(0,1),Piece("knight","white","Nb1"))
+		self.board[0,6] = Square(Position(0,6),Piece("knight","white","Ng1"))
+		self.board[7,1] = Square(Position(7,1),Piece("knight","black","Nb8"))
+		self.board[7,6] = Square(Position(7,6),Piece("knight","black","Ng8"))
 
-		self.board[0,2] = Square(Position(0,2),Piece("bishop","white"))
-		self.board[0,5] = Square(Position(0,5),Piece("bishop","white"))
-		self.board[7,2] = Square(Position(7,2),Piece("bishop","black"))
-		self.board[7,5] = Square(Position(7,5),Piece("bishop","black"))
+		self.board[0,2] = Square(Position(0,2),Piece("bishop","white","Bc1"))
+		self.board[0,5] = Square(Position(0,5),Piece("bishop","white","Bf1"))
+		self.board[7,2] = Square(Position(7,2),Piece("bishop","black","Bc8"))
+		self.board[7,5] = Square(Position(7,5),Piece("bishop","black","Bf8"))
 
-		self.board[0,3] = Square(Position(0,3),Piece("queen","white"))
-		self.board[0,4] = Square(Position(0,4),Piece("king","white"))
-		self.board[7,3] = Square(Position(7,3),Piece("queen","black"))
-		self.board[7,4] = Square(Position(7,4),Piece("king","black"))
+		self.board[0,3] = Square(Position(0,3),Piece("queen","white","Qd1"))
+		self.board[0,4] = Square(Position(0,4),Piece("king","white","Ke1"))
+		self.board[7,3] = Square(Position(7,3),Piece("queen","black","Qd8"))
+		self.board[7,4] = Square(Position(7,4),Piece("king","black","Ke8"))
 
 		for file in range(8):
 			for rank in range(4):
-				self.board[rank+2,file] = Square(Position(rank+2,file),Piece("nopiece","none"))
+				self.board[rank+2,file] = Square(Position(rank+2,file),Piece("nopiece","none","np"))
 
 		self.evaluate_attacked_squares()
 
 	def make_move(self,start,end,turn_color,promotion_type):
-		if self.is_valid_position(start):
-			if self.is_valid_position(end):
-				piece_to_move = self.board[start.rank,start.file].piece
-				piece_to_take = self.board[end.rank,end.file].piece
-				if piece_to_move.type is not "nopiece":
-					if self.is_valid_move(piece_to_move,start,end):
-						self.move_piece(start,end,turn_color,promotion_type,piece_to_move,piece_to_take)
-						self.evaluate_attacked_squares()
-						self.clear_en_pessantability(turn_color)
+		if start != end:
+			if self.is_valid_position(start):
+				if self.is_valid_position(end):
+					piece_to_move = self.board[start.rank,start.file].piece
+					piece_to_take = self.board[end.rank,end.file].piece
+					if piece_to_move.type is not "nopiece":
+						if self.is_valid_move(piece_to_move,start,end):
+							self.move_piece(start,end,turn_color,promotion_type,piece_to_move,piece_to_take)
+							self.evaluate_attacked_squares()
+							self.clear_en_pessantability(turn_color)
+						else:
+							raise InvalidMoveError(piece_to_move.type,start,end)
 					else:
-						raise InvalidMoveError(piece_to_move.type,start,end)
+						raise NoPieceError(start,turn_color)
 				else:
-					raise NoPieceError(start,turn_color)
+					raise InvalidPositionError(end)
 			else:
 				raise InvalidPositionError(end)
 		else:
-			raise InvalidPositionError(end)
+			raise SameSquareError(start)
 
 	def move_piece(self,start,end,turn_color,promotion_type,piece_to_move,piece_to_take):
 		if self.is_check(turn_color) and piece_to_move.type is not "king":
@@ -109,12 +112,12 @@ class Board:
 			self.take_piece(piece_to_take,turn_color)
 
 		if piece_to_move.type is "king":
-			king_positions[turn_color] = end
+			self.king_positions[turn_color] = copy.deepcopy(end)
 
-		piece_to_move.position = end
+		piece_to_move.position = copy.deepcopy(end)
 		piece_to_move.has_moved = True
 		self.board[end.rank,end.file].piece = copy.deepcopy(piece_to_move)
-		self.board[start.rank,start.file].piece = Piece("nopiece","none")
+		self.board[start.rank,start.file].piece = Piece("nopiece","none","np")
 
 	def castle(self,turn_color,direction):
 		castle_rank = 0
@@ -123,7 +126,7 @@ class Board:
 			castle_rank = 7
 			cross_check_color = "white"
 
-		king_position = king_positions[turn_color]
+		king_position = self.king_positions[turn_color]
 		if king_position == Position(castle_rank,4) and not self.board[king_position.rank,king_position.file].piece.has_moved:
 			if direction is "short":
 				corner_piece = self.board[castle_rank,7].piece
@@ -210,99 +213,33 @@ class Board:
 
 		temp_position.rank = start.rank+direction*1
 		temp_position.file = start.file-1
-		if self.is_valid_position(temp_position) and (self.board[temp_position.rank,temp_position.file].piece.color is not piece.color or self.board[temp_position.rank,temp_position.file].is_en_pessantable_by[piece.color]) and end == temp_position:
+		if self.is_valid_position(temp_position) and piece.id in self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] and end == temp_position:
 			return True
 
 		temp_position.rank = start.rank+direction*1
 		temp_position.file = start.file+1
-		if self.is_valid_position(temp_position) and (self.board[temp_position.rank,temp_position.file].piece.color is not piece.color or self.board[temp_position.rank,temp_position.file].is_en_pessantable_by[piece.color]) and end == temp_position:
+		if self.is_valid_position(temp_position) and piece.id in self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] and end == temp_position:
 			return True	
 
 		return False
 
 	def is_valid_move_rook(self,start,end,piece):
-		temp_position = Position(0,0)
+		return piece.id in self.board[end.rank,end.file].is_attacked_by[piece.color]
 
-		if (end.rank-start.rank)*(end.file-start.file) == 0 and end != start:
-			rank_shift = end.rank-start.rank
-			file_shift = end.file-start.file
-
-			if rank_shift != 0:
-				rank_direction = rank_shift/abs(rank_shift)
-				for rank_shift_abs in range(abs(rank_shift)):
-					temp_position.rank = int(start.rank+rank_direction*(rank_shift_abs+1))
-					temp_position.file = start.file
-					if self.is_valid_position(temp_position):
-						if self.board[temp_position.rank,temp_position.file].piece.color is piece.color:
-							return False
-						elif end == temp_position:
-							return True
-				return False
-			else:
-				file_direction = file_shift/abs(file_shift)
-				for rank_shift_abs in range(abs(rank_shift)):
-					temp_position.rank = start.rank
-					temp_position.file = int(start.file+file_direction*(file_shift_abs+1))
-					if self.is_valid_position(temp_position):
-						if self.board[temp_position.rank,temp_position.file].piece.color is piece.color:
-							return False
-						elif end == temp_position:
-							return True
-				return False
-		else:
-			return False 
-
-	def is_valid_move_knight(self,start,end,piece,color):
-		temp_position = Position(0,0) 
-		shifts = [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,-2)]
-
-		for shift in shifts:
-			temp_position.rank = start.rank+shift[0]
-			temp_position.file = start.file+shift[1]
-			if self.is_valid_position(temp_position) and self.board[temp_position.rank,temp_position.file].piece.color is not piece.color and end == temp_position:
-				return True
-		return False
+	def is_valid_move_knight(self,start,end,piece):
+		return piece.id in self.board[end.rank,end.file].is_attacked_by[piece.color]
 
 	def is_valid_move_bishop(self,start,end,piece):
-		temp_position = Position(0,0)
-
-		taking_piece_color = "black"
-		if piece.color is "black":
-			taking_piece_color = "white"
-
-		rank_shift = end.rank-start.rank
-		file_shift = end.file-start.file
-
-		if abs(rank_shift) == abs(file_shift) and end != start:
-			rank_direction = rank_shift/abs(rank_shift)
-			file_direction = file_shift/abs(file_shift)
-
-			for shift_abs in range(abs(rank_shift)):
-				temp_position.rank = int(start.rank+rank_direction*(shift_abs+1))
-				temp_position.file = int(start.file+file_direction*(shift_abs+1))
-				if self.is_valid_position(temp_position):
-					if end == temp_position:
-						if self.board[temp_position.rank,temp_position.file].piece.color is piece.color:
-							return False
-						else:
-							return True
-					else:
-						if self.board[temp_position.rank,temp_position.file].piece.color is taking_piece_color:
-							return False
-			return False
-		else:
-			return False 
+		return piece.id in self.board[end.rank,end.file].is_attacked_by[piece.color]
 
 	def is_valid_move_queen(self,start,end,piece):
-		if (end.rank-start.rank)*(end.file-start.file) == 0 and end != start:
-			return self.is_valid_move_rook(start,end,piece)
-		elif abs(end.rank-start.rank) == abs(end.file-start.file) and end != start:
-			return self.is_valid_move_bishop(start,end,piece)
-		else:
-			return False 
+		return piece.id in self.board[end.rank,end.file].is_attacked_by[piece.color]
 
 	def is_valid_move_king(self,start,end,piece):
-		return abs(end.rank-start.rank) <= 1 and abs(end.file-start.file) <= 1 and not (self.board[end.rank,end.file].piece.color is piece.color)
+		opponent_color = "black"
+		if piece.color is "black":
+			opponent_color = "white"
+		return piece.id in self.board[end.rank,end.file].is_attacked_by[piece.color] and not self.board[end.rank,end.file].is_attacked_by[opponent_color]
 
 	def take_piece(self,piece_to_take,piece_color):
 		if piece_to_take.type is "pawn":
@@ -321,7 +258,7 @@ class Board:
 			king_color = "white"
 			if turn_color is "white":
 				king_color = "black"
-			king_position = king_positions[king_color]
+			king_position = self.king_positions[king_color]
 			king = self.board[king_position.rank,king_position.file]
 			position_shifts = [-1,0,1]
 			checkmate = True
@@ -332,7 +269,7 @@ class Board:
 				for file_shift in position_shifts:
 					temp_position.rank = king_position.rank+rank_shift
 					temp_position.file = king_position.file+file_shift
-					if self.is_valid_position(temp_position) and self.board[temp_position.rank,temp_position.file].piece.color is not king_color and not self.board[temp_position.rank,temp_position.file].is_attacked_by[turn_color]:
+					if self.is_valid_position(temp_position) and not self.board[temp_position.rank,temp_position.file].is_attacked_by[turn_color]:
 						checkmate = False
 						break
 			return checkmate
@@ -350,8 +287,8 @@ class Board:
 		temp_position = Position(0,0)
 		for rank in range(8):
 			for file in range(8):
-				self.board[rank,file].is_attacked_by["white"] = False
-				self.board[rank,file].is_attacked_by["black"] = False
+				self.board[rank,file].is_attacked_by["white"] = []
+				self.board[rank,file].is_attacked_by["black"] = []
 
 		for rank in range(8):
 			temp_position.rank = rank 
@@ -382,12 +319,12 @@ class Board:
 		temp_position.rank = position.rank+direction*1
 		temp_position.file = position.file+1
 		if self.is_valid_position(temp_position):
-			self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
+			self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color].append(piece.id)
 
 		temp_position.rank = position.rank+direction*1
 		temp_position.file = position.file-1
 		if self.is_valid_position(temp_position):
-			self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
+			self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color].append(piece.id)
 
 	def evaluate_attacked_squares_ranks_files(self,position,piece):
 		temp_position = Position(0,0)
@@ -395,49 +332,25 @@ class Board:
 		for rank in range(1,8):
 			temp_position.rank = position.rank+rank
 			temp_position.file = position.file
-			if self.is_valid_position(temp_position):
-				if self.board[temp_position.rank,temp_position.file].piece.type is "nopiece":
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-				elif self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-					break
-			else:
+			if not self.determine_attackability(piece,temp_position):
 				break
 
 		for rank in range(1,8):
 			temp_position.rank = position.rank-rank
 			temp_position.file = position.file
-			if self.is_valid_position(temp_position):
-				if self.board[temp_position.rank,temp_position.file].piece.type is "nopiece":
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-				elif self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-					break
-			else:
+			if not self.determine_attackability(piece,temp_position):
 				break
 
 		for file in range(1,8):
 			temp_position.rank = position.rank
 			temp_position.file = position.file+file
-			if self.is_valid_position(temp_position):
-				if self.board[temp_position.rank,temp_position.file].piece.type is "nopiece":
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-				elif self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-					break
-			else:
+			if not self.determine_attackability(piece,temp_position):
 				break
 
 		for file in range(1,8):
 			temp_position.rank = position.rank
 			temp_position.file = position.file-file
-			if self.is_valid_position(temp_position):
-				if self.board[temp_position.rank,temp_position.file].piece.type is "nopiece":
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-				elif self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-					break
-			else:
+			if not self.determine_attackability(piece,temp_position):
 				break
 
 	def evaluate_attacked_squares_knight(self,position,piece):
@@ -448,7 +361,7 @@ class Board:
 			temp_position.rank = position.rank+shift[0]
 			temp_position.file = position.file+shift[1]
 			if self.is_valid_position(temp_position):
-				self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
+				self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color].append(piece.id)
 
 	def evaluate_attacked_squares_diagonals(self,position,piece):
 		temp_position = Position(0,0) 
@@ -456,60 +369,54 @@ class Board:
 		for rank in range(1,8):
 			temp_position.rank = position.rank+rank
 			temp_position.file = position.file+rank
-			if self.is_valid_position(temp_position):
-				if self.board[temp_position.rank,temp_position.file].piece.type is "nopiece":
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-				elif self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-					break
-			else:
+			if not self.determine_attackability(piece,temp_position):
 				break
 
 		for rank in range(1,8):
 			temp_position.rank = position.rank-rank
 			temp_position.file = position.file-rank
-			if self.is_valid_position(temp_position):
-				if self.board[temp_position.rank,temp_position.file].piece.type is "nopiece":
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-				elif self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-					break
-			else:
+			if not self.determine_attackability(piece,temp_position):
 				break
 
 		for file in range(1,8):
 			temp_position.rank = position.rank-file
 			temp_position.file = position.file+file
-			if self.is_valid_position(temp_position):
-				if self.board[temp_position.rank,temp_position.file].piece.type is "nopiece":
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-				elif self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-					break
-			else:
+			if not self.determine_attackability(piece,temp_position):
 				break
 
 		for file in range(1,8):
 			temp_position.rank = position.rank+file
 			temp_position.file = position.file-file
-			if self.is_valid_position(temp_position):
-				if self.board[temp_position.rank,temp_position.file].piece.type is "nopiece":
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-				elif self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
-					self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
-					break
-			else:
+			if not self.determine_attackability(piece,temp_position):
 				break
+			
+	def determine_attackability(self,piece,position):
+		if self.is_valid_position(position):
+			temp_piece = self.board[position.rank,position.file].piece
+			if temp_piece.type is "nopiece":
+				self.board[position.rank,position.file].is_attacked_by[piece.color].append(piece.id)
+				return True
+			elif temp_piece.color is not piece.color:
+				self.board[position.rank,position.file].is_attacked_by[piece.color].append(piece.id)
+				return False
+			elif temp_piece.color is piece.color:
+				return False
+		else:
+			return False
 
 	def evaluate_attacked_squares_king(self,position,piece):
 		temp_position = Position(0,0) 
 		shifts = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,0)]
 
+		opponent_color = "black"
+		if piece.color is "black":
+			opponent_color = "white"
+
 		for shift in shifts:
 			temp_position.rank = position.rank+shift[0]
 			temp_position.file = position.file+shift[1]
-			if self.is_valid_position(temp_position):
-				self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] = True
+			if self.is_valid_position(temp_position) and self.board[temp_position.rank,temp_position.file].piece.color is not piece.color and not self.board[temp_position.rank,temp_position.file].is_attacked_by[opponent_color]:
+				self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color].append(piece.id)
 
 	def clear_en_pessantability(self,turn_color):
 		en_pessant_rank = 1
