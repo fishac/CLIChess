@@ -2,13 +2,13 @@
 
 ### A simple python-based chess game played locally on the command-line.
 
-###### Starting a Game
+#### Starting a Game
 
 ```sh
 python ./driver.py
 ```
 
-###### Playing Moves
+#### Playing Moves
 
 To make a regular move, choose the source square (where the piece is currently), for example `e2`, and a destination square (where the piece will go), for example, `e4`. 
 Enter the move by typing `e2 e4` and press enter. 
@@ -24,9 +24,9 @@ For example, to push a pawn on the seventh rank to the eighth and promote it to 
 
 Capitalization for the moves does not matter.
 
-###### The Pieces
+#### The Pieces
 
 Pieces are represented by the first letter of their name, with pawns being lowercase and the other pieces being capitalized.
 The pieces have a prefix `w` or `b` depending on their color, white or black.
 
-
+For example, a black pawn is `bp` and a white rook is `wR`.
