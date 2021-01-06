@@ -4,8 +4,10 @@
 
 #### Starting a Game
 
+From the repository's base directory, enter
+
 ```sh
-python ./driver.py
+python ./CLIChess.py
 ```
 
 #### Playing Moves
