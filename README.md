@@ -7,7 +7,7 @@
 From the repository's base directory, enter
 
 ```sh
-python ./CLIChess.py
+python CLIChess.py
 ```
 
 #### Playing Moves
