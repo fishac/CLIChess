@@ -7,43 +7,54 @@ from os import system
 from sys import stdout
 
 class Game:
-	def __init__(self):
+	def __init__(self,piece_display_type):
 		self.board = Board()
+		self.piece_display_type = piece_display_type
 		stdout.reconfigure(encoding="utf-8")
 
 	def play(self):
-		game_end = False
-		check_status = False
-		checkmate_status = False
+		self.game_end = False
+		self.check_status = False
+		self.checkmate_status = False
+		self.resign_status = False
 
-		while not game_end:
+		while not self.game_end:
 			self.display_board()
 
-			if check_status:
+			if self.check_status:
 				self.warn_check("white")
 
 			self.move("white")
 
-			checkmate_status = self.board.is_checkmate("black")
-			if checkmate_status:
-				game_end = True
-				self.end_game("white")
+			if self.resign_status:
+				self.game_end = True
+				self.resignation("black")
 
-			check_status = self.board.is_check("black")
+			self.checkmate_status = self.board.is_checkmate("black")
+			if self.checkmate_status:
+				self.game_end = True
+				self.checkmate("white")
 
-			self.display_board()
+			self.check_status = self.board.is_check("black")
 
-			if check_status:
-				self.warn_check("black")
+			if not self.game_end:
+				self.display_board()
 
-			self.move("black")
+				if self.check_status:
+					self.warn_check("black")
 
-			checkmate_status = self.board.is_checkmate("white")
-			if checkmate_status:
-				game_end = True
-				self.end_game("black")
+				self.move("black")
 
-			check_status = self.board.is_check("white")
+				if self.resign_status:
+					self.game_end = True
+					self.resignation("white")
+
+				self.checkmate_status = self.board.is_checkmate("white")
+				if self.checkmate_status:
+					self.game_end = True
+					self.checkmate("black")
+
+				self.check_status = self.board.is_check("white")
 
 	def move(self,turn_color):
 		while True:
@@ -51,7 +62,7 @@ class Game:
 				self.attempt_move(turn_color)
 				break
 			except InvalidInputError as e:
-				print("Invalid input. Correct format \"startsquare endsquare\", or \"startsquare endsquare promotiontype\", \"castle direction\". Exs: \"a2 a4\", \"a7 a8 queen\", \"castle short\".\n")
+				print("Invalid input. Correct format \"startsquare endsquare\", \"startsquare endsquare promotiontype\", or \"castle direction\". Exs: \"a2 a4\", \"a7 a8 queen\", \"castle short\".\n")
 			except InvalidPositionError as e:
 				print("Invalid position: " + e.position + ". Files range from A to H, ranks range from 1 to 8.\n")
 			except NoPieceError as e:
@@ -72,13 +83,15 @@ class Game:
 		inp_array = inp.split()
 		position_regex = "[a-hA-H][1-8]"
 
-		if inp_array[0].lower() is "castle":
+		if inp_array[0].lower() == "castle" and len(inp_array) == 2:
 			if len(inp_array) == 2:
 				direction = inp_array[1]
 
 				self.board.castle(turn_color, direction)
 			else:
 				raise InvalidCastleInputError(inp)
+		elif inp_array[0] == "resign":
+			self.resign_status = True
 		elif len(inp_array) == 2 or len(inp_array) == 3:
 			start_inp = inp_array[0]
 			end_inp = inp_array[1]
@@ -95,19 +108,28 @@ class Game:
 					except:
 						raise
 				else:
-					raise InvalidPositionError(end)
+					raise InvalidInputError(inp)
 			else:
-				raise InvalidPositionError(start)
+				raise InvalidInputError(inp)
 		else:
 			raise InvalidInputError(inp)
 
 	def warn_check(self,color):
 		print(color + " is in check.\n")
 
-	def end_game(self,color):
+	def checkmate(self,color):
 		print("Checkmate, " + color + " wins.\n")
 
+	def resignation(self,color):
+		print("Resignation, " + color + " wins.\n")
+
 	def display_board(self):
+		if self.piece_display_type == "pieces":
+			self.display_board_pieces()
+		elif self.piece_display_type == "letters":
+			self.display_board_letters()
+
+	def display_board_letters(self):
 		self.clear()
 
 		print()
@@ -134,7 +156,7 @@ class Game:
 				if i % 5 == 0:
 					string_to_print += "|"
 				elif i % 5 == 2:
-					string_to_print += self.format_piece(real_rank,file)
+					string_to_print += self.format_piece_letters(real_rank,file)
 					file += 1
 				elif i % 5 == 1 or i % 5 == 3:
 					string_to_print += " "
@@ -160,7 +182,7 @@ class Game:
 
 		print()
 
-	def display_board2(self):
+	def display_board_pieces(self):
 		self.clear()
 
 		print()
@@ -187,7 +209,7 @@ class Game:
 				if i % 4 == 0:
 					string_to_print += "|"
 				elif i % 4 == 2:
-					string_to_print += self.format_piece2(real_rank,file)
+					string_to_print += self.format_piece_pieces(real_rank,file)
 					file += 1
 				else:
 					string_to_print += " "
@@ -213,7 +235,7 @@ class Game:
 
 		print()
 
-	def format_piece(self,rank,file):
+	def format_piece_letters(self,rank,file):
 		piece_type = self.board.board[rank,file].piece.type
 		piece_color = self.board.board[rank,file].piece.color
 		formatted_color = piece_color[0]
@@ -233,7 +255,7 @@ class Game:
 		elif piece_type is "king":
 			return formatted_color + "K"
 
-	def format_piece2(self,rank,file):
+	def format_piece_pieces(self,rank,file):
 		piece_type = self.board.board[rank,file].piece.type
 		piece_color = self.board.board[rank,file].piece.color
 		formatted_color = piece_color[0]

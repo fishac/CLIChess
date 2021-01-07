@@ -1,19 +1,23 @@
-from Game.Game import Game
+from .Game.Game import Game
 
-def main():
-	play = True
+class CLIChess:
+	def __init__(self,piece_display_type):
+		self.piece_display_type = piece_display_type
 
-	while play:
-		game = Game()
-		game.play()
+	def run(self):
+		play = True
 
-		while True:
-			play_again = input("Play again? (y/n): ").lower()
-			if play_again is "n":
-				print("Thanks for playing!")
-				play = False
-			elif play_again is not "y":
-				print("Please enter one of y or n.")
+		while play:
+			game = Game(self.piece_display_type)
+			game.play()
 
-if __name__ == "__main__":
-	main()
+			while True:
+				play_again = input("Play again? (y/n): ").lower()
+				if play_again == "n":
+					print("Thanks for playing!")
+					play = False
+					break
+				elif play_again != "y":
+					print("Please enter one of y or n.")
+				else:
+					break

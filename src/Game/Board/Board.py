@@ -27,8 +27,8 @@ class Board:
 			},
 		}
 		self.king_positions = {
-			"white": (0,4),
-			"black": (7,4)
+			"white": Position(0,4),
+			"black": Position(7,4)
 		}
 		for file in range(8):
 			self.board[1,file] = Square(Position(1,file),Piece("pawn","white","p" + str(file) + "1"))
@@ -281,7 +281,7 @@ class Board:
 		if turn_color is "white":
 			king_color = "black"
 		king_position = self.king_positions[king_color]
-		return self.board[king_position].is_attacked_by[turn_color]
+		return self.board[king_position.rank,king_position.file].is_attacked_by[turn_color]
 		
 	def evaluate_attacked_squares(self):
 		temp_position = Position(0,0)
