@@ -62,8 +62,8 @@ with letter-based pieces and unicode character-based pieces.
 
 Letter-based pieces:
 
-![image](screenshots/letter_pieces.png)
+![](screenshots/letter_pieces.png?raw=true)
 
 Unicode character-based pieces:
 
-![image](screenshots/unicode_character_pieces.png)
+![](screenshots/unicode_character_pieces.png?raw=true)
