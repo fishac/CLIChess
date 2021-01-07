@@ -60,4 +60,4 @@ Below are screenshots of the board after
 
 with letter-based pieces (left) and unicode character-based pieces (right).
 
-![image](screenshots/combined_pieces.PNG?raw=true)
+![](screenshots/combined_pieces.png?raw=true)
