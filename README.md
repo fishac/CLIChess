@@ -58,12 +58,6 @@ Below are screenshots of the board after
 2. Bc4
 ```
 
-with letter-based pieces and unicode character-based pieces.
+with letter-based pieces (left) and unicode character-based pieces (right).
 
-Letter-based pieces:
-
-![image](screenshots/letter_pieces.PNG?raw=true)
-
-Unicode character-based pieces:
-
-![image](screenshots/unicode_character_pieces.PNG?raw=true)
+![image](screenshots/combined_pieces.PNG?raw=true)
