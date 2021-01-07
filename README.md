@@ -10,6 +10,14 @@ From the repository's base directory, enter
 python CLIChess.py
 ```
 
+Run as above, or use the options `-l` or `--letters` to use the standard letter-based pieces in the board display.
+Use the options `-p` or `--pieces` to use unicode chess piece characters in the board display.
+For example,
+
+```sh
+python CLIChess.py -p
+```
+
 #### Playing Moves
 
 To make a regular move, choose the source square (where the piece is currently), for example `e2`, and a destination square (where the piece will go), for example, `e4`. 
@@ -28,7 +36,15 @@ Capitalization for the moves does not matter.
 
 #### The Pieces
 
+##### Letter-based display (default)
+
 Pieces are represented by the first letter of their name, with pawns being lowercase and the other pieces being capitalized.
 The pieces have a prefix `w` or `b` depending on their color, white or black.
 
 For example, a black pawn is `bp` and a white rook is `wR`.
+
+##### Unicode character-based display (optional)
+
+Pieces are represented with unicode characters, &#9812;, &#9819;, etc.
+Note that the display assumes a dark theme console, and flips the piece colors to compensate. 
+If the console is light themed, the board will seem flipped.
