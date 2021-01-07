@@ -45,6 +45,6 @@ For example, a black pawn is `bp` and a white rook is `wR`.
 
 ##### Unicode character-based display (optional)
 
-Pieces are represented with unicode characters, &#9812;, &#9819;, etc.
+Pieces are represented with unicode characters, &#9812;, &#9818;, etc.
 Note that the display assumes a dark theme console, and flips the piece colors to compensate. 
 If the console is light themed, the board will seem flipped.
