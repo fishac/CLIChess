@@ -355,12 +355,12 @@ class Board:
 
 	def evaluate_attacked_squares_knight(self,position,piece):
 		temp_position = Position(0,0) 
-		shifts = [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,-2)]
+		shifts = [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)]
 
 		for shift in shifts:
 			temp_position.rank = position.rank+shift[0]
 			temp_position.file = position.file+shift[1]
-			if self.is_valid_position(temp_position):
+			if self.is_valid_position(temp_position) and self.board[temp_position.rank,temp_position.file].piece.color is not piece.color:
 				self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color].append(piece.id)
 
 	def evaluate_attacked_squares_diagonals(self,position,piece):
