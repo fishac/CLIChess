@@ -32,6 +32,11 @@ When pushing a pawn to promotion, an additional input is required for the move.
 Choose the piece to promote the pawn into (usually a Queen), and add that information to the move. 
 For example, to push a pawn on the seventh rank to the eighth and promote it to a Queen, type `e7 e8 queen`.
 
+To resign, type `resign` and press enter.
+
+To highlight squares a piece can move to, type `?square` and press enter. 
+For example, `?e2`.
+
 Capitalization for the moves does not matter.
 
 #### The Pieces

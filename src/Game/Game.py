@@ -1,5 +1,5 @@
 from .Board.Board import Board
-from .Board.BoardErrors import InvalidPositionError, NoPieceError, SameSquareError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
+from .Board.BoardErrors import InvalidPositionError, NoPieceError, EmptySquareError, SameSquareError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
 from .Board.Position import Position
 from .InputErrors import InvalidInputError, InvalidCastleInputError
 import re
@@ -19,54 +19,51 @@ class Game:
 		self.resign_status = False
 
 		while not self.game_end:
+			self.turn("white")
+
+			if not self.game_end:
+				self.turn("black")
+
+	def turn(self,turn_color):
+		opponent_color = "black"
+		if turn_color is "white":
+			opponent_color = "white"
+
+		turn_complete = False
+		while not turn_complete:
 			self.display_board()
+			self.board.unhighlight_squares()
 
 			if self.check_status:
-				self.warn_check("white")
+				self.warn_check(turn_color)
 
-			self.move("white")
+			turn_complete = self.move(turn_color)
 
 			if self.resign_status:
 				self.game_end = True
-				self.resignation("black")
+				self.resignation(opponent_color)
 
-			self.checkmate_status = self.board.is_checkmate("black")
+			self.checkmate_status = self.board.is_checkmate(turn_color)
 			if self.checkmate_status:
 				self.game_end = True
-				self.checkmate("white")
+				self.checkmate("black")
 
-			self.check_status = self.board.is_check("black")
-
-			if not self.game_end:
-				self.display_board()
-
-				if self.check_status:
-					self.warn_check("black")
-
-				self.move("black")
-
-				if self.resign_status:
-					self.game_end = True
-					self.resignation("white")
-
-				self.checkmate_status = self.board.is_checkmate("white")
-				if self.checkmate_status:
-					self.game_end = True
-					self.checkmate("black")
-
-				self.check_status = self.board.is_check("white")
+			self.check_status = self.board.is_check(opponent_color)
 
 	def move(self,turn_color):
+		end_of_turn = False
 		while True:
 			try:
-				self.attempt_move(turn_color)
+				end_of_turn = self.attempt_move(turn_color)
 				break
 			except InvalidInputError as e:
-				print("Invalid input. Correct format \"startsquare endsquare\", \"startsquare endsquare promotiontype\", or \"castle direction\". Exs: \"a2 a4\", \"a7 a8 queen\", \"castle short\".\n")
+				print("Invalid input. Correct format \"startsquare endsquare\", \"startsquare endsquare promotiontype\", \"castle direction\", \"resign\", or \"?square\". Exs: \"a2 a4\", \"a7 a8 queen\", \"castle short\".\n")
 			except InvalidPositionError as e:
 				print("Invalid position: " + e.position + ". Files range from A to H, ranks range from 1 to 8.\n")
 			except NoPieceError as e:
 				print("Invalid move. No " + e.color + " piece at square " + e.position + ".\n")
+			except EmptySquareError as e:
+				print("There are no pieces at " + e.position + ".\n")
 			except SameSquareError as e:
 				print("Invalid move. Cannot move a piece to the same square it is on.\n")
 			except InvalidMoveError as e:
@@ -77,10 +74,11 @@ class Game:
 				print("Invalid input. Castling requires a direction, short (kingside) or long (queenside). Ex: \"castle short\".\n")
 			except InvalidCastleError as e:
 				print("Invalid move. Cannot castle.\n")
+		return end_of_turn
 
 	def attempt_move(self,turn_color):
 		inp = input(turn_color + " to play: ")
-		inp_array = inp.split()
+		inp_array = inp.lower().split()
 		position_regex = "[a-hA-H][1-8]"
 
 		if inp_array[0].lower() == "castle" and len(inp_array) == 2:
@@ -88,10 +86,21 @@ class Game:
 				direction = inp_array[1]
 
 				self.board.castle(turn_color, direction)
+				return True
 			else:
 				raise InvalidCastleInputError(inp)
-		elif inp_array[0] == "resign":
+		elif inp_array[0] == "resign" and len(inp_array) == 1:
 			self.resign_status = True
+			return True
+		elif inp_array[0][0] == "?" and len(inp_array[0]) == 3 and len(inp_array) == 1:
+			position_inp = inp_array[0][1] + inp_array[0][2]
+			if re.match(position_regex,position_inp):
+				position = Position(int(position_inp[1])-1,int(ord(position_inp[0]))-97)
+				try:
+					self.board.highlight_possible_moves(position)
+					return False
+				except:
+					raise
 		elif len(inp_array) == 2 or len(inp_array) == 3:
 			start_inp = inp_array[0]
 			end_inp = inp_array[1]
@@ -101,10 +110,11 @@ class Game:
 
 			if re.match(position_regex,start_inp):
 				if re.match(position_regex,end_inp):
-					start = Position(int(start_inp[1])-1,int(ord(start_inp[0])-96)-1)
+					start = Position(int(start_inp[1])-1,int(ord(start_inp[0]))-97)
 					end = Position(int(end_inp[1])-1,int(ord(end_inp[0])-96)-1)
 					try:
 						self.board.make_move(start,end,turn_color,promotion_type)
+						return True
 					except:
 						raise
 				else:
@@ -141,16 +151,24 @@ class Game:
 
 		for rank in range(8):
 			real_rank = 7-rank
-			file = 0
 
+			file = 0
 			string_to_print = "  "
 			for i in range(41):
 				if i % 5 == 0:
 					string_to_print += "|"
+				elif i % 5 == 2:
+					highlighted = self.board.board[real_rank,file].is_highlighted
+					if highlighted:
+						string_to_print += "o"
+					else:
+						string_to_print += " "
+					file += 1
 				else:
 					string_to_print += " "
 			print(string_to_print)
 
+			file = 0
 			string_to_print = str(real_rank+1) + " "
 			for i in range(41):
 				if i % 5 == 0:
@@ -194,16 +212,24 @@ class Game:
 
 		for rank in range(8):
 			real_rank = 7-rank
-			file = 0
 
+			file = 0
 			string_to_print = "  "
 			for i in range(33):
 				if i % 4 == 0:
 					string_to_print += "|"
+				elif i % 4 == 2:
+					highlighted = self.board.board[real_rank,file].is_highlighted
+					if highlighted:
+						string_to_print += "o"
+					else:
+						string_to_print += " "
+					file += 1
 				else:
 					string_to_print += " "
 			print(string_to_print)
 
+			file = 0
 			string_to_print = str(real_rank+1) + " "
 			for i in range(33):
 				if i % 4 == 0:

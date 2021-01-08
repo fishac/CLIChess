@@ -1,7 +1,7 @@
 from .Square import Square
 from .Piece import Piece
 from .Position import Position
-from .BoardErrors import InvalidPositionError, NoPieceError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
+from .BoardErrors import InvalidPositionError, NoPieceError, EmptySquareError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
 import copy
 from numpy import ndarray
 
@@ -60,6 +60,20 @@ class Board:
 
 		self.evaluate_attacked_squares()
 
+	def highlight_possible_moves(self,position):
+		if self.is_valid_position(position):
+			piece = self.board[position.rank,position.file].piece
+			if piece.type is not "nopiece":
+				self.board[position.rank,position.file].is_highlighted = True
+				for rank in range(8):
+					for file in range(8):
+						if self.is_valid_move(piece,position,Position(rank,file)):
+							self.board[rank,file].is_highlighted = True
+			else:
+				raise EmptySquareError(position,piece.color)
+		else:
+			raise InvalidPositionError(position)
+
 	def make_move(self,start,end,turn_color,promotion_type):
 		if start != end:
 			if self.is_valid_position(start):
@@ -69,6 +83,7 @@ class Board:
 					if piece_to_move.type is not "nopiece":
 						if self.is_valid_move(piece_to_move,start,end):
 							self.move_piece(start,end,turn_color,promotion_type,piece_to_move,piece_to_take)
+							self.unhighlight_squares()
 							self.evaluate_attacked_squares()
 							self.clear_en_pessantability(turn_color)
 						else:
@@ -164,6 +179,7 @@ class Board:
 			else:
 				raise InvalidCastleError(turn_color)
 
+			self.unhighlight_squares()
 			self.evaluate_attacked_squares()
 			self.clear_en_pessantability(turn_color)
 		else:
@@ -193,11 +209,12 @@ class Board:
 		else:
 			raise NoPieceError(start,piece.color)
 
-
 	def is_valid_move_pawn(self,start,end,piece):
 		direction = 1
+		opponent_color = "black"
 		if piece.color is "black":
 			direction = -1
+			opponent_color = "white"
 
 		temp_position = Position(0,0)
 
@@ -213,12 +230,12 @@ class Board:
 
 		temp_position.rank = start.rank+direction*1
 		temp_position.file = start.file-1
-		if self.is_valid_position(temp_position) and piece.id in self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] and end == temp_position:
+		if self.is_valid_position(temp_position) and piece.id in self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] and self.board[temp_position.rank,temp_position.file].piece.color is opponent_color and end == temp_position:
 			return True
 
 		temp_position.rank = start.rank+direction*1
 		temp_position.file = start.file+1
-		if self.is_valid_position(temp_position) and piece.id in self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] and end == temp_position:
+		if self.is_valid_position(temp_position) and piece.id in self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color] and self.board[temp_position.rank,temp_position.file].piece.color is opponent_color and end == temp_position:
 			return True	
 
 		return False
@@ -424,6 +441,11 @@ class Board:
 			en_pessant_rank = 6
 		for file in range(8):
 			self.board[en_pessant_rank,file].is_en_pessantable_by[turn_color] = False
+
+	def unhighlight_squares(self):
+		for rank in range(8):
+			for file in range(8):
+				self.board[rank,file].is_highlighted = False
 
 	def reset(self):
 		self.__init__()

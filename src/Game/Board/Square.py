@@ -10,6 +10,7 @@ class Square:
 			"white": [],
 			"black": []
 		}
+		self.is_highlighted = False
 
 	def __str__(self):
 		return str(self.position) + ":" + self.piece.type
