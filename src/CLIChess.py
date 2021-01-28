@@ -17,7 +17,7 @@ class CLIChess:
 					print("Thanks for playing!")
 					play = False
 					break
-				elif play_again != "y":
-					print("Please enter one of y or n.")
-				else:
+				elif play_again == "y":
 					break
+				else:
+					print("Please enter one of y or n.")

@@ -21,3 +21,9 @@ def get_pawn_rank(color):
 		return 1
 	else:
 		return 6
+
+def get_color_prefix(color):
+	if color == "white":
+		return "w"
+	else:
+		return "b"

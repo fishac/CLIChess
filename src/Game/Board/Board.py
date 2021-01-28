@@ -2,13 +2,15 @@ from .Square import Square
 from .Piece import Piece
 from .Position import Position
 from .BoardErrors import InvalidPositionError, NoPieceError, EmptySquareError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
-from ..Utils import get_opponent_color, get_direction, get_castle_rank, get_pawn_rank
+from ..Utils import get_opponent_color, get_direction, get_castle_rank, get_pawn_rank, get_color_prefix
 import copy
 from numpy import ndarray
 
 class Board:
 	def __init__(self):
 		self.board = ndarray((8,8),dtype=object)
+		self.turns_since_last_capture = 0
+		self.board_encodings = []
 		self.pieces = {
 			"white":
 			{
@@ -32,34 +34,35 @@ class Board:
 			"black": Position(7,4)
 		}
 		for file in range(8):
-			self.board[1,file] = Square(Position(1,file),Piece("pawn","white","p" + str(file) + "1"))
-			self.board[6,file] = Square(Position(6,file),Piece("pawn","black","p" + str(file) + "6"))
+			self.board[1,file] = Square(Position(1,file),Piece("pawn","white","wp" + str(file) + "1"))
+			self.board[6,file] = Square(Position(6,file),Piece("pawn","black","wp" + str(file) + "6"))
 
-		self.board[0,0] = Square(Position(0,0),Piece("rook","white","Ra1"))
-		self.board[0,7] = Square(Position(0,7),Piece("rook","white","Rh1"))
-		self.board[7,0] = Square(Position(7,0),Piece("rook","black","Ra8"))
-		self.board[7,7] = Square(Position(7,7),Piece("rook","black","Rh8"))
+		self.board[0,0] = Square(Position(0,0),Piece("rook","white","wRa1"))
+		self.board[0,7] = Square(Position(0,7),Piece("rook","white","wRh1"))
+		self.board[7,0] = Square(Position(7,0),Piece("rook","black","bRa8"))
+		self.board[7,7] = Square(Position(7,7),Piece("rook","black","bRh8"))
 
-		self.board[0,1] = Square(Position(0,1),Piece("knight","white","Nb1"))
-		self.board[0,6] = Square(Position(0,6),Piece("knight","white","Ng1"))
-		self.board[7,1] = Square(Position(7,1),Piece("knight","black","Nb8"))
-		self.board[7,6] = Square(Position(7,6),Piece("knight","black","Ng8"))
+		self.board[0,1] = Square(Position(0,1),Piece("knight","white","wNb1"))
+		self.board[0,6] = Square(Position(0,6),Piece("knight","white","wNg1"))
+		self.board[7,1] = Square(Position(7,1),Piece("knight","black","bNb8"))
+		self.board[7,6] = Square(Position(7,6),Piece("knight","black","bNg8"))
 
-		self.board[0,2] = Square(Position(0,2),Piece("bishop","white","Bc1"))
-		self.board[0,5] = Square(Position(0,5),Piece("bishop","white","Bf1"))
-		self.board[7,2] = Square(Position(7,2),Piece("bishop","black","Bc8"))
-		self.board[7,5] = Square(Position(7,5),Piece("bishop","black","Bf8"))
+		self.board[0,2] = Square(Position(0,2),Piece("bishop","white","wBc1"))
+		self.board[0,5] = Square(Position(0,5),Piece("bishop","white","wBf1"))
+		self.board[7,2] = Square(Position(7,2),Piece("bishop","black","bBc8"))
+		self.board[7,5] = Square(Position(7,5),Piece("bishop","black","bBf8"))
 
-		self.board[0,3] = Square(Position(0,3),Piece("queen","white","Qd1"))
-		self.board[0,4] = Square(Position(0,4),Piece("king","white","Ke1"))
-		self.board[7,3] = Square(Position(7,3),Piece("queen","black","Qd8"))
-		self.board[7,4] = Square(Position(7,4),Piece("king","black","Ke8"))
+		self.board[0,3] = Square(Position(0,3),Piece("queen","white","wQd1"))
+		self.board[0,4] = Square(Position(0,4),Piece("king","white","wKe1"))
+		self.board[7,3] = Square(Position(7,3),Piece("queen","black","bQd8"))
+		self.board[7,4] = Square(Position(7,4),Piece("king","black","bKe8"))
 
 		for file in range(8):
 			for rank in range(4):
 				self.board[rank+2,file] = Square(Position(rank+2,file),Piece("nopiece","none","np"))
 
 		self.evaluate_attacked_squares()
+		self.evaluate_valid_moves()
 
 	def highlight_possible_moves(self,position):
 		if self.is_valid_position(position):
@@ -123,6 +126,8 @@ class Board:
 
 		if piece_to_take.type != "nopiece":
 			self.take_piece(piece_to_take,turn_color)
+		else:
+			self.turns_since_last_capture += 1
 
 		if piece_to_move.type == "king":
 			self.king_positions[turn_color] = copy.deepcopy(end)
@@ -259,6 +264,7 @@ class Board:
 			self.pieces[piece_color]["bishops"] -= 1
 		elif piece_to_take.type == "queen":
 			self.pieces[piece_color]["queens"] -= 1
+		self.turns_since_last_capture = 0
 
 	def is_checkmate(self,turn_color):
 		if self.is_check(turn_color):
@@ -276,7 +282,7 @@ class Board:
 				for file_shift in position_shifts:
 					temp_position.rank = king_position.rank+rank_shift
 					temp_position.file = king_position.file+file_shift
-					if self.is_valid_position(temp_position) and not self.board[temp_position.rank,temp_position.file].is_attacked_by[turn_color]:
+					if king.id in self.board[rank,file].valid_moves:
 						checkmate = False
 						break
 			return checkmate
@@ -287,7 +293,55 @@ class Board:
 		king_color = get_opponent_color(turn_color)
 		king_position = self.king_positions[king_color]
 		return self.board[king_position.rank,king_position.file].is_attacked_by[turn_color]
-		
+
+	def is_draw(self,turn_color):
+		return self.is_fifty_move_no_cap() or self.is_stalemate(turn_color) or self.is_three_move_repetition()
+
+	def is_fifty_move_no_cap(self):
+		return self.turns_since_last_capture >= 100
+
+	def is_stalemate(self,turn_color):
+		any_valid_moves = False
+		color_prefix = get_color_prefix(turn_color)
+		for rank in range(8):
+			for file in range(8):
+				if color_prefix in self.board[rank,file].valid_moves_color:
+					any_valid_moves = True
+		return not any_valid_moves and not self.is_check(get_opponent_color(turn_color))
+
+	def is_three_move_repetition(self):
+		return len(self.board_encodings) == 6 and self.board_encodings[0] == self.board_encodings[2] and self.board_encodings[0] == self.board_encodings[4] and self.board_encodings[1] == self.board_encodings[3] and self.board_encodings[1] == 5
+
+	def evaluate_valid_moves(self):
+		temp_position = Position(0,0)
+		temp_position2 = Position(0,0)
+		for rank in range(8):
+			for file in range(8):
+				self.board[rank,file].valid_moves = self.board[rank,file].is_attacked_by["white"] + self.board[rank,file].is_attacked_by["black"]
+				self.board[rank,file].valid_moves_color = []
+				if self.board[rank,file].is_attacked_by["white"] and not "w" in self.board[rank,file].valid_moves_color:
+					self.board[rank,file].valid_moves_color.append("w")
+				if self.board[rank,file].is_attacked_by["black"] and not "b" in self.board[rank,file].valid_moves_color:
+					self.board[rank,file].valid_moves_color.append("b")
+
+		for rank in range(8):
+			temp_position.rank = rank 
+			temp_position2.rank = rank
+			for file in range(8):
+				piece = self.board[rank,file].piece 
+				temp_position.file = file
+
+				if piece.type == "pawn":
+					temp_position2.file = file + get_direction(piece.color)*1
+					if self.is_valid_move_pawn(temp_position,temp_position2,piece):
+						self.board[temp_position2.rank,temp_position2.file].valid_moves.append(piece.id)
+
+					if rank == 1 or rank == 6:
+						temp_position2.file = file + get_direction(piece.color)*2
+						if self.is_valid_move_pawn(temp_position,temp_position2,piece):
+							self.board[temp_position2.rank,temp_position2.file].valid_moves.append(piece.id)
+					
+
 	def evaluate_attacked_squares(self):
 		temp_position = Position(0,0)
 		for rank in range(8):
@@ -410,7 +464,6 @@ class Board:
 	def evaluate_attacked_squares_king(self,position,piece):
 		temp_position = Position(0,0) 
 		shifts = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,0)]
-
 		opponent_color = get_opponent_color(piece.color)
 
 		for shift in shifts:
@@ -418,6 +471,19 @@ class Board:
 			temp_position.file = position.file+shift[1]
 			if self.is_valid_position(temp_position) and self.board[temp_position.rank,temp_position.file].piece.color != piece.color and not self.board[temp_position.rank,temp_position.file].is_attacked_by[opponent_color]:
 				self.board[temp_position.rank,temp_position.file].is_attacked_by[piece.color].append(piece.id)
+
+	def update_board_encodings(self):
+		encoded_board = self.encode_board()
+		self.board_encodings.append(encoded_board)
+		self.board_encodings = self.board_encodings[1:]
+
+	def encode_board(self):
+		encoded_board = ""
+		for rank in range(8):
+			for file in range(8):
+				encoded_board += str(self.board[rank,file])
+			encoded_board += "/"
+
 
 	def clear_en_pessantability(self,turn_color):
 		en_pessant_rank = 2
@@ -430,6 +496,18 @@ class Board:
 		for rank in range(8):
 			for file in range(8):
 				self.board[rank,file].is_highlighted = False
+
+	def get_opponent_color(self, turn_color):
+		if turn_color == "white":
+			return "black"
+		else: 
+			return "white"
+
+	def get_pawn_direction(self, turn_color):
+		if turn_color == "white":
+			return 1
+		else: 
+			return -1
 
 	def reset(self):
 		self.__init__()

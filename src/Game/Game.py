@@ -1,7 +1,7 @@
 from .Board.Board import Board
 from .Board.BoardErrors import InvalidPositionError, NoPieceError, EmptySquareError, SameSquareError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
 from .Board.Position import Position
-from .InputErrors import InvalidInputError, InvalidCastleInputError
+from .InputErrors import InvalidInputError, InvalidCastleInputError, DeclinedDrawError
 from .Utils import get_opponent_color
 import re
 from os import system
@@ -18,6 +18,7 @@ class Game:
 		self.check_status = False
 		self.checkmate_status = False
 		self.resign_status = False
+		self.draw_status = False
 
 		while not self.game_end:
 			self.turn("white")
@@ -27,27 +28,32 @@ class Game:
 
 	def turn(self,turn_color):
 		opponent_color = get_opponent_color(turn_color)
-
 		turn_complete = False
 		while not turn_complete:
 			self.display_board()
 			self.board.unhighlight_squares()
 
-			if self.check_status:
-				self.warn_check(turn_color)
-
-			turn_complete = self.move(turn_color)
-
-			if self.resign_status:
+			if self.draw_status or self.board.is_draw(turn_color):
 				self.game_end = True
-				self.resignation(opponent_color)
+				self.draw()
+				turn_complete = True
+			else:
+				if self.check_status:
+					self.warn_check(turn_color)
 
-			self.checkmate_status = self.board.is_checkmate(turn_color)
-			if self.checkmate_status:
-				self.game_end = True
-				self.checkmate("black")
+				turn_complete = self.move(turn_color)
 
-			self.check_status = self.board.is_check(opponent_color)
+				if turn_complete:
+					if self.resign_status:
+						self.game_end = True
+						self.resignation(opponent_color)
+
+					self.checkmate_status = self.board.is_checkmate(turn_color)
+					if self.checkmate_status:
+						self.game_end = True
+						self.checkmate(turn_color)
+
+				self.check_status = self.board.is_check(opponent_color)
 
 	def move(self,turn_color):
 		end_of_turn = False
@@ -56,7 +62,7 @@ class Game:
 				end_of_turn = self.attempt_move(turn_color)
 				break
 			except InvalidInputError as e:
-				print("Invalid input. Correct format \"startsquare endsquare\", \"startsquare endsquare promotiontype\", \"castle direction\", \"resign\", or \"?square\". Exs: \"a2 a4\", \"a7 a8 queen\", \"castle short\".\n")
+				print("Invalid input. Correct format \"startsquare endsquare\", \"startsquare endsquare promotiontype\", \"castle direction\", \"resign\", \"?square\", or \"draw?\". Exs: \"a2 a4\", \"a7 a8 queen\", \"castle short\".\n")
 			except InvalidPositionError as e:
 				print("Invalid position: " + e.position + ". Files range from A to H, ranks range from 1 to 8.\n")
 			except NoPieceError as e:
@@ -73,6 +79,8 @@ class Game:
 				print("Invalid input. Castling requires a direction, short (kingside) or long (queenside). Ex: \"castle short\".\n")
 			except InvalidCastleError as e:
 				print("Invalid move. Cannot castle.\n")
+			except DeclinedDrawError as e:
+				print(e.color + " declined the draw.\n")
 		return end_of_turn
 
 	def attempt_move(self,turn_color):
@@ -91,6 +99,12 @@ class Game:
 					raise InvalidCastleInputError(inp)
 			elif inp_array[0] == "resign" and len(inp_array) == 1:
 				self.resign_status = True
+				return True
+			elif inp_array[0] == "draw?" and len(inp_array) == 1:
+				try:
+					self.attempt_draw(turn_color)
+				except:
+					raise
 				return True
 			elif inp_array[0][0] == "?" and len(inp_array[0]) == 3 and len(inp_array) == 1:
 				position_inp = inp_array[0][1] + inp_array[0][2]
@@ -132,6 +146,21 @@ class Game:
 
 	def resignation(self,color):
 		print("Resignation, " + color + " wins.\n")
+
+	def draw(self):
+		print("Draw.\n")
+
+	def attempt_draw(self,turn_color):
+		opponent_color = get_opponent_color(turn_color)
+		while True:
+			draw_response = input(turn_color + " offers a draw. Does " + opponent_color + " accept? (y/n): ").lower()
+			if draw_response == "n":
+				raise DeclinedDrawError(opponent_color)
+			elif draw_response == "y":
+				self.draw_status = True
+				break
+			else:
+				print("Please enter one of y or n.")
 
 	def display_board(self):
 		if self.piece_display_type == "pieces":

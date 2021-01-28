@@ -37,6 +37,9 @@ To resign, type `resign` and press enter.
 To highlight squares a piece can move to, type `?square` and press enter. 
 For example, `?e2`.
 
+To offer a draw, type `draw?` and press enter. 
+The other player will respond with `y` or `n`. 
+
 Capitalization for the moves does not matter.
 
 #### The Pieces

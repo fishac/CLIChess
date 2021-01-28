@@ -10,7 +10,10 @@ class Square:
 			"white": [],
 			"black": []
 		}
+		self.valid_moves = []
+		self.valid_moves_color = []
 		self.is_highlighted = False
 
 	def __str__(self):
-		return str(self.position) + ":" + self.piece.type
+		return "[" + str(self.position) + ":" + self.piece.id + ":" + str(self.is_en_pessantable_by["white"]) + ":" + str(self.is_en_pessantable_by["white"]) + "]"
+		
