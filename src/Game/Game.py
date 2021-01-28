@@ -2,6 +2,7 @@ from .Board.Board import Board
 from .Board.BoardErrors import InvalidPositionError, NoPieceError, EmptySquareError, SameSquareError, InvalidMoveError, InvalidPieceCheckError, InvalidCastleError
 from .Board.Position import Position
 from .InputErrors import InvalidInputError, InvalidCastleInputError
+from .Utils import get_opponent_color
 import re
 from os import system
 from sys import stdout
@@ -25,9 +26,7 @@ class Game:
 				self.turn("black")
 
 	def turn(self,turn_color):
-		opponent_color = "black"
-		if turn_color is "white":
-			opponent_color = "white"
+		opponent_color = get_opponent_color(turn_color)
 
 		turn_complete = False
 		while not turn_complete:
@@ -81,48 +80,49 @@ class Game:
 		inp_array = inp.lower().split()
 		position_regex = "[a-hA-H][1-8]"
 
-		if inp_array[0].lower() == "castle" and len(inp_array) == 2:
-			if len(inp_array) == 2:
-				direction = inp_array[1]
+		if len(inp_array) != 0:
+			if inp_array[0].lower() == "castle" and len(inp_array) == 2:
+				if len(inp_array) == 2:
+					direction = inp_array[1]
 
-				self.board.castle(turn_color, direction)
+					self.board.castle(turn_color, direction)
+					return True
+				else:
+					raise InvalidCastleInputError(inp)
+			elif inp_array[0] == "resign" and len(inp_array) == 1:
+				self.resign_status = True
 				return True
-			else:
-				raise InvalidCastleInputError(inp)
-		elif inp_array[0] == "resign" and len(inp_array) == 1:
-			self.resign_status = True
-			return True
-		elif inp_array[0][0] == "?" and len(inp_array[0]) == 3 and len(inp_array) == 1:
-			position_inp = inp_array[0][1] + inp_array[0][2]
-			if re.match(position_regex,position_inp):
-				position = Position(int(position_inp[1])-1,int(ord(position_inp[0]))-97)
-				try:
-					self.board.highlight_possible_moves(position)
-					return False
-				except:
-					raise
-		elif len(inp_array) == 2 or len(inp_array) == 3:
-			start_inp = inp_array[0]
-			end_inp = inp_array[1]
-			promotion_type = None
-			if len(inp_array) == 3:
-				promotion_type = inp_array[2].lower()
-
-			if re.match(position_regex,start_inp):
-				if re.match(position_regex,end_inp):
-					start = Position(int(start_inp[1])-1,int(ord(start_inp[0]))-97)
-					end = Position(int(end_inp[1])-1,int(ord(end_inp[0])-96)-1)
+			elif inp_array[0][0] == "?" and len(inp_array[0]) == 3 and len(inp_array) == 1:
+				position_inp = inp_array[0][1] + inp_array[0][2]
+				if re.match(position_regex,position_inp):
+					position = Position(int(position_inp[1])-1,int(ord(position_inp[0]))-97)
 					try:
-						self.board.make_move(start,end,turn_color,promotion_type)
-						return True
+						self.board.highlight_possible_moves(position)
+						return False
 					except:
 						raise
+			elif len(inp_array) == 2 or len(inp_array) == 3:
+				start_inp = inp_array[0]
+				end_inp = inp_array[1]
+				promotion_type = None
+				if len(inp_array) == 3:
+					promotion_type = inp_array[2].lower()
+
+				if re.match(position_regex,start_inp):
+					if re.match(position_regex,end_inp):
+						start = Position(int(start_inp[1])-1,int(ord(start_inp[0]))-97)
+						end = Position(int(end_inp[1])-1,int(ord(end_inp[0])-96)-1)
+						try:
+							self.board.make_move(start,end,turn_color,promotion_type)
+							return True
+						except:
+							raise
+					else:
+						raise InvalidInputError(inp)
 				else:
 					raise InvalidInputError(inp)
 			else:
 				raise InvalidInputError(inp)
-		else:
-			raise InvalidInputError(inp)
 
 	def warn_check(self,color):
 		print(color + " is in check.\n")
@@ -266,19 +266,19 @@ class Game:
 		piece_color = self.board.board[rank,file].piece.color
 		formatted_color = piece_color[0]
 
-		if piece_type is "nopiece":
+		if piece_type == "nopiece":
 			return "  "
-		elif piece_type is "pawn":
+		elif piece_type == "pawn":
 			return formatted_color + "p"
-		elif piece_type is "rook":
+		elif piece_type == "rook":
 			return formatted_color + "R"
-		elif piece_type is "knight":
+		elif piece_type == "knight":
 			return formatted_color + "N"
-		elif piece_type is "bishop": 
+		elif piece_type == "bishop": 
 			return formatted_color + "B"
-		elif piece_type is "queen": 
+		elif piece_type == "queen": 
 			return formatted_color + "Q"
-		elif piece_type is "king":
+		elif piece_type == "king":
 			return formatted_color + "K"
 
 	def format_piece_pieces(self,rank,file):
@@ -286,33 +286,33 @@ class Game:
 		piece_color = self.board.board[rank,file].piece.color
 		formatted_color = piece_color[0]
 
-		if piece_type is "nopiece":
+		if piece_type == "nopiece":
 			return " "
-		elif piece_color is "black":
-			if piece_type is "pawn":
+		elif piece_color == "black":
+			if piece_type == "pawn":
 				return "\u2659"
-			elif piece_type is "rook":
+			elif piece_type == "rook":
 				return "\u2656"
-			elif piece_type is "knight":
+			elif piece_type == "knight":
 				return "\u2658"
-			elif piece_type is "bishop": 
+			elif piece_type == "bishop": 
 				return "\u2657"
-			elif piece_type is "queen": 
+			elif piece_type == "queen": 
 				return "\u2655"
-			elif piece_type is "king":
+			elif piece_type == "king":
 				return "\u2654"
-		elif piece_color is "white":
-			if piece_type is "pawn":
+		elif piece_color == "white":
+			if piece_type == "pawn":
 				return "\u265f"
-			elif piece_type is "rook":
+			elif piece_type == "rook":
 				return "\u265c"
-			elif piece_type is "knight":
+			elif piece_type == "knight":
 				return "\u265e"
-			elif piece_type is "bishop": 
+			elif piece_type == "bishop": 
 				return "\u265d"
-			elif piece_type is "queen": 
+			elif piece_type == "queen": 
 				return "\u265b"
-			elif piece_type is "king":
+			elif piece_type == "king":
 				return "\u265a"
 
 	def reset(self):

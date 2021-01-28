@@ -1,0 +1,7 @@
+g2 g3
+e7 e6
+f1 g2
+d7 d6
+g1 f3
+c7 c6
+castle short
